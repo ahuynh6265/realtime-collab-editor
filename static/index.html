@@ -19,6 +19,8 @@
 <button id = "connect">Connect</button>
 
 <div id = "user-display"></div>
+<div id = "notifications"></div>
+<div id = "active-users"></div>
 
 <script>
   let websocket
@@ -28,6 +30,8 @@
 
     const username = document.getElementById("username").value 
     const usernameDiv = document.getElementById("user-display")
+    const notifDiv = document.getElementById("notifications")
+    const activeDiv = document.getElementById("active-users")
     
     const room = document.getElementById("room").value 
     websocket = new WebSocket(`ws://localhost:8000/ws/${room}/${username}`)
@@ -39,7 +43,17 @@
     websocket.onmessage = function(event){
       console.log(event.data)
       const edits  = document.getElementById("edit")
-      edits.value = event.data
+      const data = JSON.parse(event.data)
+
+      if (data.type == "update"){
+        edits.value = data.content
+      }
+      else if (data.type == "notification"){
+        notifDiv.innerHTML += `<p>${data.message}</p>`
+      }
+      else if (data.type == "users"){
+        activeDiv.innerHTML = `Current Users:<br>` + data.users.join(", ")
+      }
     }
 
     websocket.onclose = function(){
