@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, inital-scale=1.0">
+  <title>Collab Editor</title>
+</head>
+<body>
+
+<label for ="username"> Username: </label>
+<input type ="text" id = "username" placeholder= "Username here"/> 
+
+<label for ="room"> Room Number: </label>
+<input type ="number" id="room" placeholder="Room number here"/>
+
+<label for="edit">Add Text: </label>
+<textarea id="edit" placeholder="Text here"></textarea>
+
+<button id = "connect">Connect</button>
+
+<div id = "user-display"></div>
+
+<script>
+  let websocket
+
+  document.getElementById("connect").addEventListener("click", function(){
+    if(websocket) {websocket.close()}
+
+    const username = document.getElementById("username").value 
+    const usernameDiv = document.getElementById("user-display")
+    
+    const room = document.getElementById("room").value 
+    websocket = new WebSocket(`ws://localhost:8000/ws/${room}/${username}`)
+
+    websocket.onopen = function(){
+      usernameDiv.innerHTML = `<p>${username}: </p>`
+    } 
+
+    websocket.onmessage = function(event){
+      console.log(event.data)
+      const edits  = document.getElementById("edit")
+      edits.value = event.data
+    }
+
+    websocket.onclose = function(){
+      const disconnected = document.getElementById("edit").value = "Disconected"
+    }
+  })
+
+  document.getElementById("edit").addEventListener("keyup", function(){
+    const editInput = document.getElementById("edit").value
+    websocket.send(`${editInput}`)
+  })
+</script>
+</body>
