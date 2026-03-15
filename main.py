@@ -1,10 +1,11 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import engine, SessionLocal, Base
 from models import Document
+from schemas import DocumentUpdate
 import json
 
 connected_clients = {}
@@ -39,10 +40,10 @@ async def websocket_endpoint(websocket: WebSocket, document_id: int, username: s
   room = db.query(Document).filter(Document.id == document_id).first() 
   connected_clients.setdefault(document_id, {})
   if not room: 
-    room = Document(text = "")
+    room = Document(title="Untitled", text = "")
     db.add(room)
     db.commit() 
-  data = {"type": "update", "content": room.text}
+  data = {"type": "update", "content": room.text, "title": room.title}
   await websocket.send_text(json.dumps(data))
 
   connected_clients[document_id][websocket] = username
@@ -60,7 +61,7 @@ async def websocket_endpoint(websocket: WebSocket, document_id: int, username: s
   try:
     while True:
       message = await websocket.receive_text()
-      data = {"type": "update", "content": message}
+      data = {"type": "update", "content": message, "title": room.title}
       for client in connected_clients[document_id].keys():
         if client != websocket: 
           await client.send_text(json.dumps(data))
@@ -79,3 +80,20 @@ async def websocket_endpoint(websocket: WebSocket, document_id: int, username: s
     data = {"type": "users", "users": list(connected_clients[document_id].values())}
     for client in connected_clients[document_id].keys():
       await client.send_text(json.dumps(data))
+
+@app.patch("/documents/{document_id}") 
+async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: Session = Depends(get_db)):
+  document = db.query(Document).filter(Document.id == document_id).first() 
+  if not document: 
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User ID not found")
+  document.title = document_data.title
+  db.commit()
+  db.refresh(document)
+
+  data = {"type": "title", "title": document_data.title}
+  for client in connected_clients.get(document_id, {}):
+    await client.send_text(json.dumps(data))
+
+
+  return document 
+  

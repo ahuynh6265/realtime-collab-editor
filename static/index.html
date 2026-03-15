@@ -7,6 +7,10 @@
 </head>
 <body>
 
+<label for ="title">Title: </label>
+<input type ="text" id ="title" placeholder= "Title here"/> 
+<button id = "save">Save Title Name</button>
+
 <label for ="username"> Username: </label>
 <input type ="text" id = "username" placeholder= "Username here"/> 
 
@@ -23,17 +27,21 @@
 <div id = "active-users"></div>
 
 <script>
+  let isLoaded = false
   let websocket
+  let currentRoom
 
   document.getElementById("connect").addEventListener("click", function(){
+    isLoaded = false
     if(websocket) {websocket.close()}
 
     const username = document.getElementById("username").value 
     const usernameDiv = document.getElementById("user-display")
     const notifDiv = document.getElementById("notifications")
     const activeDiv = document.getElementById("active-users")
-    
-    const room = document.getElementById("room").value 
+    const room = document.getElementById("room").value  
+
+    currentRoom = room
     websocket = new WebSocket(`ws://localhost:8000/ws/${room}/${username}`)
 
     websocket.onopen = function(){
@@ -43,9 +51,14 @@
     websocket.onmessage = function(event){
       console.log(event.data)
       const edits  = document.getElementById("edit")
+      const title = document.getElementById("title")
       const data = JSON.parse(event.data)
 
       if (data.type == "update"){
+        if (isLoaded == false){
+          title.value = data.title 
+          isLoaded = true
+        }
         edits.value = data.content
       }
       else if (data.type == "notification"){
@@ -54,11 +67,23 @@
       else if (data.type == "users"){
         activeDiv.innerHTML = `Current Users:<br>` + data.users.join(", ")
       }
+      else if (data.type == "title"){
+        title.value = data.title
+      }
     }
 
     websocket.onclose = function(){
       const disconnected = document.getElementById("edit").value = "Disconected"
     }
+  })
+
+  document.getElementById("save").addEventListener("click", function(){
+    const titleValue = document.getElementById("title").value
+    const title = fetch(`http://localhost:8000/documents/${currentRoom}`,{
+      method: "PATCH",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({title: titleValue})
+    })
   })
 
   document.getElementById("edit").addEventListener("keyup", function(){
