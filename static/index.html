@@ -30,6 +30,8 @@
   let isLoaded = false
   let websocket
   let currentRoom
+  const id = new URLSearchParams(window.location.search).get("id")
+  document.getElementById("room").value = id
 
   document.getElementById("connect").addEventListener("click", function(){
     isLoaded = false
@@ -40,6 +42,7 @@
     const notifDiv = document.getElementById("notifications")
     const activeDiv = document.getElementById("active-users")
     const room = document.getElementById("room").value  
+    
 
     currentRoom = room
     websocket = new WebSocket(`ws://localhost:8000/ws/${room}/${username}`)

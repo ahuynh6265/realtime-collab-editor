@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, inital-scale=1.0">
+  <title>Documents Page</title>
+</head>
+<body>
+  <h1>Documents List: </h1>
+  <div id = "document-list"></div>
+
+  <script>
+    const docDiv = document.getElementById("document-list")
+    fetch("http://localhost:8000/documents")
+    .then(response => response.json())
+    .then(data => {
+      for (const doc of data){
+        docDiv.innerHTML += `<br><a href="/editor?id=${doc.id}">${doc.title}</a>`
+      }
+    })
+
+
+
+  </script>
+</body>
