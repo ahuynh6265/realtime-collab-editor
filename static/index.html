@@ -19,6 +19,7 @@
 
 <label for="edit">Add Text: </label>
 <textarea id="edit" placeholder="Text here"></textarea>
+<div id = "typing"></div>
 
 <button id = "connect">Connect</button>
 
@@ -26,10 +27,14 @@
 <div id = "notifications"></div>
 <div id = "active-users"></div>
 
+
 <script>
   let isLoaded = false
   let websocket
   let currentRoom
+  let typingTimer
+  let typingUsers = new Set() 
+
   const id = new URLSearchParams(window.location.search).get("id")
   document.getElementById("room").value = id
 
@@ -56,6 +61,7 @@
       const edits  = document.getElementById("edit")
       const title = document.getElementById("title")
       const data = JSON.parse(event.data)
+      const typingDiv = document.getElementById("typing")
 
       if (data.type == "update"){
         if (isLoaded == false){
@@ -73,6 +79,26 @@
       else if (data.type == "title"){
         title.value = data.title
       }
+      else if (data.type == "typing"){
+        if (data.typing == true){
+          let displayUsers = ""
+          typingUsers.add(data.username)
+          for (const users of typingUsers.values()){
+            displayUsers += `${users} is typing... <br>`
+          }
+          typingDiv.innerHTML = displayUsers
+        }
+
+        else if (data.typing == false){
+          let displayUsers = ""
+          typingUsers.delete(data.username)
+          for (const users of typingUsers.values()){
+            displayUsers += `${users} is typing... <br>`
+          }
+          typingDiv.innerHTML = displayUsers
+        }
+      }
+
     }
 
     websocket.onclose = function(){
@@ -89,9 +115,17 @@
     })
   })
 
-  document.getElementById("edit").addEventListener("keyup", function(){
+  document.getElementById("edit").addEventListener("input", function(){
     const editInput = document.getElementById("edit").value
-    websocket.send(`${editInput}`)
+    const username = document.getElementById("username").value
+    const typingDiv =  document.getElementById("typing")
+    websocket.send(JSON.stringify({type: "update", content: editInput}))
+
+    clearTimeout(typingTimer)
+    websocket.send(JSON.stringify({type: "typing", typing: true}))
+    typingTimer = setTimeout(() => {
+      websocket.send(JSON.stringify({type: "typing", typing: false}))
+    }, 2000)
   })
 </script>
 </body>

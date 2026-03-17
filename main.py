@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from database import engine, SessionLocal, Base
 from models import Document
-from schemas import DocumentUpdate
+from schemas import DocumentUpdate, DocumentResponse
 import json
 
 connected_clients = {}
@@ -31,7 +31,7 @@ def get_db():
 
 
 @app.get("/")
-def get_static(): return FileResponse("static/index.html")
+def get_home(): return FileResponse("static/home.html")
 
 @app.websocket("/ws/{document_id}/{username}")
 async def websocket_endpoint(websocket: WebSocket, document_id: int, username: str, db: Session = Depends(get_db)):
@@ -61,12 +61,24 @@ async def websocket_endpoint(websocket: WebSocket, document_id: int, username: s
   try:
     while True:
       message = await websocket.receive_text()
-      data = {"type": "update", "content": message, "title": room.title}
-      for client in connected_clients[document_id].keys():
-        if client != websocket: 
-          await client.send_text(json.dumps(data))
-      room.text = message
-      db.commit() 
+      data = json.loads(message)
+
+      if data["type"] == "update": 
+        content = data["content"]
+        data = {"type": "update", "content": content, "title": room.title}
+        for client in connected_clients[document_id].keys():
+          if client != websocket: 
+            await client.send_text(json.dumps(data))
+        room.text = content 
+        db.commit() 
+
+      elif data["type"] == "typing":
+        typing = data["typing"]
+        data = {"type": "typing", "typing": typing, "username": username}
+        for client in connected_clients[document_id].keys():
+          if client != websocket:
+            await client.send_text(json.dumps(data))
+
   except WebSocketDisconnect: 
     pass
   finally:
@@ -96,4 +108,10 @@ async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: S
 
 
   return document 
-  
+
+@app.get("/documents", response_model=list[DocumentResponse])
+def list_documents(db: Session = Depends(get_db)):
+  return db.query(Document).all() 
+
+@app.get("/editor")
+def get_editor(): return FileResponse("static/index.html")
