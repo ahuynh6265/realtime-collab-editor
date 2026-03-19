@@ -6,9 +6,10 @@ from sqlalchemy.orm import Session
 from database import engine, SessionLocal, Base
 from models import Document
 from schemas import DocumentUpdate, DocumentResponse
-import json
+import json, connection_manager 
 
-connected_clients = {}
+
+manager = connection_manager.ConnectionManager()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -35,28 +36,22 @@ def get_home(): return FileResponse("static/home.html")
 
 @app.websocket("/ws/{document_id}/{username}")
 async def websocket_endpoint(websocket: WebSocket, document_id: int, username: str, db: Session = Depends(get_db)):
-  await websocket.accept() 
-
   room = db.query(Document).filter(Document.id == document_id).first() 
-  connected_clients.setdefault(document_id, {})
   if not room: 
     room = Document(title="Untitled", text = "")
     db.add(room)
     db.commit() 
+  await manager.connect(websocket, document_id, username)
   data = {"type": "update", "content": room.text, "title": room.title}
-  await websocket.send_text(json.dumps(data))
+  await manager.broadcast_user_only(websocket, data)
 
-  connected_clients[document_id][websocket] = username
   data = {"type": "notification", "message": f"{username} has joined"}
-  for client in connected_clients[document_id].keys():
-    if client != websocket:
-      await client.send_text(json.dumps(data))
+  await manager.broadcast(websocket, document_id, data)
 
-  data = {"type": "users", "users": list(connected_clients[document_id].values())}
-  for client in connected_clients[document_id].keys():
-    await client.send_text(json.dumps(data))
+  data = {"type": "users", "users": list(manager.connected_clients[document_id].values())}
+  await manager.broadcast_all(document_id, data)
 
-  print(f"{username} connected to room {document_id} total: {len(connected_clients[document_id])}")
+  print(f"{username} connected to room {document_id} total: {len(manager.connected_clients[document_id])}")
 
   try:
     while True:
@@ -66,32 +61,24 @@ async def websocket_endpoint(websocket: WebSocket, document_id: int, username: s
       if data["type"] == "update": 
         content = data["content"]
         data = {"type": "update", "content": content, "title": room.title}
-        for client in connected_clients[document_id].keys():
-          if client != websocket: 
-            await client.send_text(json.dumps(data))
-        room.text = content 
+        await manager.broadcast(websocket, document_id, data)
+        room.text = content
         db.commit() 
 
       elif data["type"] == "typing":
         typing = data["typing"]
         data = {"type": "typing", "typing": typing, "username": username}
-        for client in connected_clients[document_id].keys():
-          if client != websocket:
-            await client.send_text(json.dumps(data))
+        await manager.broadcast(websocket, document_id, data)
 
   except WebSocketDisconnect: 
     pass
   finally:
     data = {"type": "notification", "message": f"{username} has disconnected"}
-    for client in connected_clients[document_id].keys():
-      if client != websocket:
-        await client.send_text(json.dumps(data))
-    
-    del connected_clients[document_id][websocket]
+    await manager.broadcast(websocket, document_id, data)
+    manager.disconnect(websocket, document_id)
 
-    data = {"type": "users", "users": list(connected_clients[document_id].values())}
-    for client in connected_clients[document_id].keys():
-      await client.send_text(json.dumps(data))
+    data = {"type": "users", "users": list(manager.connected_clients[document_id].values())}
+    await manager.broadcast_all(document_id, data)
 
 @app.patch("/documents/{document_id}") 
 async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: Session = Depends(get_db)):
@@ -103,15 +90,22 @@ async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: S
   db.refresh(document)
 
   data = {"type": "title", "title": document_data.title}
-  for client in connected_clients.get(document_id, {}):
-    await client.send_text(json.dumps(data))
-
+  await manager.broadcast_all(document_id, data)
 
   return document 
 
 @app.get("/documents", response_model=list[DocumentResponse])
 def list_documents(db: Session = Depends(get_db)):
-  return db.query(Document).all() 
+  return db.query(Document).order_by(Document.id)
 
 @app.get("/editor")
 def get_editor(): return FileResponse("static/index.html")
+
+@app.post("/documents")
+def create_doc(db: Session = Depends(get_db)):
+  new_doc = Document(title="Untitled", text = "")
+  db.add(new_doc)
+  db.commit() 
+  db.refresh(new_doc)
+
+  return new_doc.id

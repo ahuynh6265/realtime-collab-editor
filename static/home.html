@@ -9,6 +9,8 @@
   <h1>Documents List: </h1>
   <div id = "document-list"></div>
 
+  <button id = "create">Create Document</button>
+
   <script>
     const docDiv = document.getElementById("document-list")
     fetch("http://localhost:8000/documents")
@@ -18,6 +20,18 @@
         docDiv.innerHTML += `<br><a href="/editor?id=${doc.id}">${doc.title}</a>`
       }
     })
+
+    document.getElementById("create").addEventListener("click", async function(){
+      const response = await fetch("http://localhost:8000/documents", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        } 
+      })
+      const id = await response.json() 
+      window.location.href = `http://localhost:8000/editor?id=${id}`
+    })
+    
 
 
 
