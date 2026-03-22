@@ -57,10 +57,10 @@
 
   <script>
     let isLoaded = false
-    let websocket
-    let currentRoom
-    let typingTimer
+    let websocket, currentRoom, typingTimer
     let typingUsers = new Set() 
+    let httpBase = `${window.location.protocol}//${window.location.host}`
+    let wsBase = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`
 
     const id = new URLSearchParams(window.location.search).get("id")
     document.getElementById("room-indicator").textContent = id
@@ -78,7 +78,7 @@
       const room = document.getElementById("room").value  
 
       currentRoom = room
-      websocket = new WebSocket(`ws://localhost:8000/ws/${room}/${username}`)
+      websocket = new WebSocket(`${wsBase}/ws/${room}/${username}`)
 
       websocket.onopen = function(){
         usernameDiv.innerHTML = `<p>${username}: </p>`
@@ -146,7 +146,7 @@
 
     document.getElementById("save").addEventListener("click", function(){
       const titleValue = document.getElementById("title").value
-      const title = fetch(`http://localhost:8000/documents/${currentRoom}`,{
+      const title = fetch(`${httpBase}/documents/${currentRoom}`,{
         method: "PATCH",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({title: titleValue})
