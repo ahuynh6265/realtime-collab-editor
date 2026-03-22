@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-
+from datetime import datetime
 class DocumentUpdate(BaseModel):
   title: str 
 
@@ -8,3 +8,5 @@ class DocumentResponse(BaseModel):
 
   id: int
   title: str
+  created_at: datetime 
+  updated_at: datetime

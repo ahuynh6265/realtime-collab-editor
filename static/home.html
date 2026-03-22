@@ -4,20 +4,27 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, inital-scale=1.0">
   <title>Documents Page</title>
+  <script src = "https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>Documents List: </h1>
-  <div id = "document-list"></div>
 
-  <button id = "create">Create Document</button>
+<body class = "bg-neutral-800 min-h-screen p-8">
+  <div class = "max-w-4xl mx-auto"> 
+  <div class = "flex justify-between items-center">
+  <h1 class = "text-white text-2xl font-semibold mb-2">Documents List: </h1>
+  <button id = "create" class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-4 py-2 hover:opacity-75 transition-opacity duration-200">Create Document</button>
+  </div>  
+  <div class = "border-b border-neutral-600 pb-4 mb-4"></div>
+  <div id = "document-list"></div>
 
   <script>
     const docDiv = document.getElementById("document-list")
+    
     fetch("http://localhost:8000/documents")
     .then(response => response.json())
     .then(data => {
       for (const doc of data){
-        docDiv.innerHTML += `<br><a href="/editor?id=${doc.id}">${doc.title}</a>`
+        const updatedAt = new Date(doc.updated_at).toLocaleDateString() 
+        docDiv.innerHTML += `<div class = "bg-neutral-700 rounded-lg mb-2 transition-colors hover:bg-neutral-600"><a class = "text-white hover:underline rounded block flex items-center gap-3 px-4 py-3 justify-between" href="/editor?id=${doc.id}">📄 ${doc.title} <span class = "text-neutral-400 text-sm">${updatedAt}</span></a></div>`
       }
     })
 
@@ -36,4 +43,5 @@
 
 
   </script>
+  </div> 
 </body>
