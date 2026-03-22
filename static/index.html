@@ -4,128 +4,166 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, inital-scale=1.0">
   <title>Collab Editor</title>
+  <script src = "https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes slide-in-left {
+      0% {visibility: visible; transform: translate3d(-100%, 0, 0);}
+      100% {transform: translate3d(0, 0, 0);}
+    }
+    @keyframes slide-out-left {
+      0% {transform: translate3d(0, 0, 0);}
+      100% {visibility: hidden; transform: translate3d(-100%, 0, 0);}
+    }
+    .slide-in {
+      animation: slide-in-left 0.3s ease forwards;
+    }
+    .slide-out {
+      animation: slide-out-left 0.3s ease forwards;
+    }
+  </style>
 </head>
-<body>
 
-<label for ="title">Title: </label>
-<input type ="text" id ="title" placeholder= "Title here"/> 
-<button id = "save">Save Title Name</button>
+<body class = "bg-neutral-800 min-h-screen p-8">
+  <input class = "hidden" type ="number" id="room"/>
 
-<label for ="username"> Username: </label>
-<input type ="text" id = "username" placeholder= "Username here"/> 
+  <div class = "bg-neutral-900 p-4 rounded-lg mb-4 flex items-center justify-between overflow-x-auto gap-4">
+    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
+    <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" onclick = "window.location.href = '/'">Home</button>
+    </div>   
 
-<label for ="room"> Room Number: </label>
-<input type ="number" id="room" placeholder="Room number here"/>
+    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
+    <label class = "text-white" for ="title">Title: </label>
+    <input class = "bg-neutral-700 text-white rounded px-3 py-1 outline-none w-48" type ="text" id ="title" placeholder= "Title here"/> 
+    <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "save">Save Title Name</button>
+    </div> 
 
-<label for="edit">Add Text: </label>
-<textarea id="edit" placeholder="Text here"></textarea>
-<div id = "typing"></div>
+    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
+    <label class = "text-white" for ="username"> Username: </label>
+    <input class = "bg-neutral-700 text-white rounded px-3 py-1 outline-none w-40" type ="text" id = "username" placeholder= "Username here"/> 
+    <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "connect">Connect</button><span id = "room-indicator" class = "text-white text-sm"></span>
+    </div>
+  </div>
 
-<button id = "connect">Connect</button>
-
-<div id = "user-display"></div>
-<div id = "notifications"></div>
-<div id = "active-users"></div>
+  
+  <textarea class = "w-full h-screen bg-neutral-700 text-white rounded-lg p-4 outline-none resize-none" id="edit" placeholder="Text here"></textarea>
+  <div id = "typing"></div>
 
 
-<script>
-  let isLoaded = false
-  let websocket
-  let currentRoom
-  let typingTimer
-  let typingUsers = new Set() 
 
-  const id = new URLSearchParams(window.location.search).get("id")
-  document.getElementById("room").value = id
+  <div id = "user-display"></div>
+  <div class = "hidden fixed bottom-4 left-4 bg-neutral-700 text-white px-4 py-2 rounded-lg shadow-lg animate-slideleft" id = "notifications"></div>
+  <div id = "active-users"></div>
 
-  document.getElementById("connect").addEventListener("click", function(){
-    isLoaded = false
-    if(websocket) {websocket.close()}
 
-    const username = document.getElementById("username").value 
-    const usernameDiv = document.getElementById("user-display")
-    const notifDiv = document.getElementById("notifications")
-    const activeDiv = document.getElementById("active-users")
-    const room = document.getElementById("room").value  
-    
+  <script>
+    let isLoaded = false
+    let websocket
+    let currentRoom
+    let typingTimer
+    let typingUsers = new Set() 
 
-    currentRoom = room
-    websocket = new WebSocket(`ws://localhost:8000/ws/${room}/${username}`)
+    const id = new URLSearchParams(window.location.search).get("id")
+    document.getElementById("room-indicator").textContent = id
+    document.getElementById("room").value = id
 
-    websocket.onopen = function(){
-      usernameDiv.innerHTML = `<p>${username}: </p>`
-    } 
 
-    websocket.onmessage = function(event){
-      console.log(event.data)
-      const edits  = document.getElementById("edit")
-      const title = document.getElementById("title")
-      const data = JSON.parse(event.data)
-      const typingDiv = document.getElementById("typing")
+    document.getElementById("connect").addEventListener("click", function(){
+      isLoaded = false
+      if(websocket) {websocket.close()}
 
-      if (data.type == "update"){
-        if (isLoaded == false){
-          title.value = data.title 
-          isLoaded = true
-        }
-        edits.value = data.content
-      }
-      else if (data.type == "notification"){
-        notifDiv.innerHTML += `<p>${data.message}</p>`
-      }
-      else if (data.type == "users"){
-        activeDiv.innerHTML = `Current Users:<br>` + data.users.join(", ")
-      }
-      else if (data.type == "title"){
-        title.value = data.title
-      }
-      else if (data.type == "typing"){
-        if (data.typing == true){
-          let displayUsers = ""
-          typingUsers.add(data.username)
-          for (const users of typingUsers.values()){
-            displayUsers += `${users} is typing... <br>`
+      const username = document.getElementById("username").value 
+      const usernameDiv = document.getElementById("user-display")
+      const notifDiv = document.getElementById("notifications")
+      const activeDiv = document.getElementById("active-users")
+      const room = document.getElementById("room").value  
+
+      currentRoom = room
+      websocket = new WebSocket(`ws://localhost:8000/ws/${room}/${username}`)
+
+      websocket.onopen = function(){
+        usernameDiv.innerHTML = `<p>${username}: </p>`
+      } 
+
+      websocket.onmessage = function(event){
+        console.log(event.data)
+        const edits  = document.getElementById("edit")
+        const title = document.getElementById("title")
+        const data = JSON.parse(event.data)
+        const typingDiv = document.getElementById("typing")
+
+        if (data.type == "update"){
+          if (isLoaded == false){
+            title.value = data.title 
+            isLoaded = true
           }
-          typingDiv.innerHTML = displayUsers
+          edits.value = data.content
+        }
+        else if (data.type == "notification"){
+          notifDiv.textContent = data.message 
+          notifDiv.classList.remove("hidden")
+          notifDiv.classList.add("slide-in")
+          setTimeout(() => {
+            notifDiv.classList.remove("slide-in")
+            notifDiv.classList.add("slide-out")
+          }, 3000)
+          setTimeout(() => {
+            notifDiv.classList.add("hidden")
+            notifDiv.classList.remove("slide-out")
+          }, 3300)
+        }
+        else if (data.type == "users"){
+          activeDiv.innerHTML = `Current Users:<br>` + data.users.join(", ")
+        }
+        else if (data.type == "title"){
+          title.value = data.title
+        }
+        else if (data.type == "typing"){
+          if (data.typing == true){
+            let displayUsers = ""
+            typingUsers.add(data.username)
+            for (const users of typingUsers.values()){
+              displayUsers += `${users} is typing... <br>`
+            }
+            typingDiv.innerHTML = displayUsers
+          }
+
+          else if (data.typing == false){
+            let displayUsers = ""
+            typingUsers.delete(data.username)
+            for (const users of typingUsers.values()){
+              displayUsers += `${users} is typing... <br>`
+            }
+            typingDiv.innerHTML = displayUsers
+          }
         }
 
-        else if (data.typing == false){
-          let displayUsers = ""
-          typingUsers.delete(data.username)
-          for (const users of typingUsers.values()){
-            displayUsers += `${users} is typing... <br>`
-          }
-          typingDiv.innerHTML = displayUsers
-        }
       }
 
-    }
-
-    websocket.onclose = function(){
-      const disconnected = document.getElementById("edit").value = "Disconected"
-    }
-  })
-
-  document.getElementById("save").addEventListener("click", function(){
-    const titleValue = document.getElementById("title").value
-    const title = fetch(`http://localhost:8000/documents/${currentRoom}`,{
-      method: "PATCH",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({title: titleValue})
+      websocket.onclose = function(){
+        const disconnected = document.getElementById("edit").value = "Disconected"
+      }
     })
-  })
 
-  document.getElementById("edit").addEventListener("input", function(){
-    const editInput = document.getElementById("edit").value
-    const username = document.getElementById("username").value
-    const typingDiv =  document.getElementById("typing")
-    websocket.send(JSON.stringify({type: "update", content: editInput}))
+    document.getElementById("save").addEventListener("click", function(){
+      const titleValue = document.getElementById("title").value
+      const title = fetch(`http://localhost:8000/documents/${currentRoom}`,{
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({title: titleValue})
+      })
+    })
 
-    clearTimeout(typingTimer)
-    websocket.send(JSON.stringify({type: "typing", typing: true}))
-    typingTimer = setTimeout(() => {
-      websocket.send(JSON.stringify({type: "typing", typing: false}))
-    }, 2000)
-  })
-</script>
+    document.getElementById("edit").addEventListener("input", function(){
+      const editInput = document.getElementById("edit").value
+      const username = document.getElementById("username").value
+      const typingDiv =  document.getElementById("typing")
+      websocket.send(JSON.stringify({type: "update", content: editInput}))
+
+      clearTimeout(typingTimer)
+      websocket.send(JSON.stringify({type: "typing", typing: true}))
+      typingTimer = setTimeout(() => {
+        websocket.send(JSON.stringify({type: "typing", typing: false}))
+      }, 2000)
+    })
+  </script>
 </body>
