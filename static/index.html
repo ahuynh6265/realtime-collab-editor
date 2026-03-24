@@ -40,6 +40,10 @@
     <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
     <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "connect">Connect</button><span id = "room-indicator" class = "text-white text-sm"></span>
     </div>
+
+    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
+      <button id = "logout">Logout</button>
+    </div>   
   </div>
 
   
@@ -177,5 +181,11 @@
         websocket.send(JSON.stringify({type: "typing", typing: false}))
       }, 2000)
     })
+
+    document.getElementById("logout").addEventListener("click", function(){
+      if(websocket) {websocket.close()}
+      localStorage.removeItem("token")
+      window.location.href = `${httpBase}/auth/login`
+    })
   </script>
-</body>
+</body> 

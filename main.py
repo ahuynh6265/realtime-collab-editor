@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from database import engine, SessionLocal, Base
 from models import Document
 from schemas import DocumentUpdate, DocumentResponse
-import json, connection_manager
+import json, connection_manager, auth
 from auth_routes import router as auth_router 
 
 manager = connection_manager.ConnectionManager()
@@ -33,7 +33,8 @@ def get_db():
 
 
 @app.get("/")
-def get_home(): return FileResponse("static/home.html")
+def get_home(): 
+  return FileResponse("static/home.html")
 
 @app.websocket("/ws/{document_id}/{username}")
 async def websocket_endpoint(websocket: WebSocket, document_id: int, username: str, db: Session = Depends(get_db)):
@@ -82,7 +83,7 @@ async def websocket_endpoint(websocket: WebSocket, document_id: int, username: s
     await manager.broadcast_all(document_id, data)
 
 @app.patch("/documents/{document_id}") 
-async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: Session = Depends(get_db)):
+async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)):
   document = db.query(Document).filter(Document.id == document_id).first() 
   if not document: 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User ID not found")
@@ -96,14 +97,14 @@ async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: S
   return document 
 
 @app.get("/documents", response_model=list[DocumentResponse])
-def list_documents(db: Session = Depends(get_db)):
+def list_documents(db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)):
   return db.query(Document).order_by(Document.id)
 
 @app.get("/editor")
 def get_editor(): return FileResponse("static/index.html")
 
 @app.post("/documents")
-def create_doc(db: Session = Depends(get_db)):
+def create_doc(db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)):
   new_doc = Document(title="Untitled", text = "")
   db.add(new_doc)
   db.commit() 
