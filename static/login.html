@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, inital-scale=1.0">
+  <title>Login Page</title>
+  <!-- <script src = "https://cdn.tailwindcss.com"></script> --> 
+  
+</head>
+
+<body>
+  <label for = "username">Username: </label>
+  <input type = "text" id = "username" placeholder = "Username here"/>
+  
+  <label for = "password">Password: </label>
+  <input type = "password" id = "password" placeholder = "Password here"/> 
+
+  <button id = "login">Sign In</button>
+
+  <div id = "error-display"></div>
+</body>
+
+<script>
+  let httpBase = `${window.location.protocol}//${window.location.host}`
+
+  document.getElementById("login").addEventListener("click", async function(){
+    const usernameValue = document.getElementById("username").value
+    const passwordValue = document.getElementById("password").value
+    const errorDiv = document.getElementById("error-display")
+
+    const response = await fetch(`${httpBase}/auth/login`, {
+      method: "POST", 
+      headers: { 
+        "Content-Type": "application/json"
+      }, 
+      body: JSON.stringify({
+        username: usernameValue, 
+        password: passwordValue, 
+      })
+    })
+
+    if (response.ok){
+      const token = await response.json() 
+      localStorage.setItem("token", token)
+      window.location.href = "/"
+    }
+    else {
+      const error = await response.json() 
+      errorDiv.innerHTML = error.detail 
+    }
+  })
+
+</script>

@@ -6,13 +6,14 @@ from sqlalchemy.orm import Session
 from database import engine, SessionLocal, Base
 from models import Document
 from schemas import DocumentUpdate, DocumentResponse
-import json, connection_manager 
-
+import json, connection_manager
+from auth_routes import router as auth_router 
 
 manager = connection_manager.ConnectionManager()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.include_router(auth_router)
 
 app.add_middleware(
   CORSMiddleware, 
@@ -109,3 +110,9 @@ def create_doc(db: Session = Depends(get_db)):
   db.refresh(new_doc)
 
   return new_doc.id
+
+@app.get("/auth/login")
+def get_login(): return FileResponse("static/login.html")
+
+@app.get("/auth/register")
+def get_register(): return FileResponse("static/register.html")

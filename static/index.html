@@ -38,8 +38,6 @@
     </div> 
 
     <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-    <label class = "text-white" for ="username"> Username: </label>
-    <input class = "bg-neutral-700 text-white rounded px-3 py-1 outline-none w-40" type ="text" id = "username" placeholder= "Username here"/> 
     <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "connect">Connect</button><span id = "room-indicator" class = "text-white text-sm"></span>
     </div>
   </div>
@@ -57,10 +55,26 @@
 
   <script>
     let isLoaded = false
-    let websocket, currentRoom, typingTimer
+    let websocket, currentRoom, typingTimer, username
     let typingUsers = new Set() 
     let httpBase = `${window.location.protocol}//${window.location.host}`
     let wsBase = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`
+
+    const token = localStorage.getItem("token")
+    if (!token) {
+      window.location.href = `${httpBase}/auth/login`
+    }
+
+    fetch(`${httpBase}/auth/me`, {
+      method: "GET", 
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      username = data 
+    })
 
     const id = new URLSearchParams(window.location.search).get("id")
     document.getElementById("room-indicator").textContent = id
@@ -71,7 +85,6 @@
       isLoaded = false
       if(websocket) {websocket.close()}
 
-      const username = document.getElementById("username").value 
       const usernameDiv = document.getElementById("user-display")
       const notifDiv = document.getElementById("notifications")
       const activeDiv = document.getElementById("active-users")
@@ -155,7 +168,6 @@
 
     document.getElementById("edit").addEventListener("input", function(){
       const editInput = document.getElementById("edit").value
-      const username = document.getElementById("username").value
       const typingDiv =  document.getElementById("typing")
       websocket.send(JSON.stringify({type: "update", content: editInput}))
 
