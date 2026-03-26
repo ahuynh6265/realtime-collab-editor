@@ -8,12 +8,14 @@ from models import Document
 from schemas import DocumentUpdate, DocumentResponse
 import json, connection_manager, auth
 from auth_routes import router as auth_router 
+from ai_routes import router as ai_router
 
 manager = connection_manager.ConnectionManager()
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(auth_router)
+app.include_router(ai_router)
 
 app.add_middleware(
   CORSMiddleware, 

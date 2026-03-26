@@ -28,38 +28,61 @@
 
   <div class = "bg-neutral-900 p-4 rounded-lg mb-4 flex items-center justify-between overflow-x-auto gap-4">
     <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-    <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" onclick = "window.location.href = '/'">Home</button>
+      <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" onclick = "window.location.href = '/'">Home</button>
     </div>   
 
     <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-    <label class = "text-white" for ="title">Title: </label>
-    <input class = "bg-neutral-700 text-white rounded px-3 py-1 outline-none w-48" type ="text" id ="title" placeholder= "Title here"/> 
-    <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "save">Save Title Name</button>
+      <label class = "text-white" for ="title">Title: </label>
+      <input class = "bg-neutral-700 text-white rounded px-3 py-1 outline-none w-48" type ="text" id ="title" placeholder= "Title here"/> 
+      <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "save">Save Title Name</button>
     </div> 
 
     <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-    <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "connect">Connect</button><span id = "room-indicator" class = "text-white text-sm"></span>
+      <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "connect">Connect</button><span id = "room-indicator" class = "text-white text-sm"></span>
     </div>
 
     <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
+      <button id = "brainstorm">Brainstorm</button>
+    </div> 
+
+    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
       <button id = "logout">Logout</button>
-    </div>   
+    </div>    
+
   </div>
 
-  
-  <textarea class = "w-full h-screen bg-neutral-700 text-white rounded-lg p-4 outline-none resize-none" id="edit" placeholder="Text here"></textarea>
+  <div class = "flex items-center">
+    <textarea class = "w-full h-screen bg-neutral-700 text-white rounded-lg p-4 outline-none resize-none" id="edit" placeholder="Text here"></textarea>
+    <div class = "hidden" id = "sidebar">
+      <label id = "response">Response: </label>
+      <button id = "accept">Accept</button>
+      <button id = "decline">Decline</button>
+    </div>
+
+    <div class = "hidden" id = "brainstorm-sidebar">
+      <button id = "close">Close</button>
+      <label id = "topics"></label>
+    </div>
+
+  </div>
+
   <div id = "typing"></div>
-
-
-
   <div id = "user-display"></div>
   <div class = "hidden fixed bottom-4 left-4 bg-neutral-700 text-white px-4 py-2 rounded-lg shadow-lg animate-slideleft" id = "notifications"></div>
   <div id = "active-users"></div>
 
+  <div id = "context-menu" class = "hidden absolute context-menu">
+    <ul>
+      <li data-action = "rewrite">Rewrite</li>
+      <li data-action = "expand">Expand</li>
+      <li data-action = "summarize">Summarize</li>
+    </ul>
+  </div>
+
 
   <script>
     let isLoaded = false
-    let websocket, currentRoom, typingTimer, username
+    let websocket, currentRoom, editInput = document.getElementById("edit"), typingTimer, username, aiResponse, info, contextMenu, sidebar, actionValue, selectionStart, selectionEnd, brainstormBar 
     let typingUsers = new Set() 
     let httpBase = `${window.location.protocol}//${window.location.host}`
     let wsBase = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`
@@ -165,21 +188,105 @@
       const titleValue = document.getElementById("title").value
       const title = fetch(`${httpBase}/documents/${currentRoom}`,{
         method: "PATCH",
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }, 
         body: JSON.stringify({title: titleValue})
       })
     })
 
     document.getElementById("edit").addEventListener("input", function(){
-      const editInput = document.getElementById("edit").value
       const typingDiv =  document.getElementById("typing")
-      websocket.send(JSON.stringify({type: "update", content: editInput}))
+      websocket.send(JSON.stringify({type: "update", content: editInput.value}))
 
       clearTimeout(typingTimer)
       websocket.send(JSON.stringify({type: "typing", typing: true}))
       typingTimer = setTimeout(() => {
         websocket.send(JSON.stringify({type: "typing", typing: false}))
       }, 2000)
+    })
+
+    document.getElementById("edit").addEventListener("contextmenu", function(){
+      event.preventDefault() 
+      aiResponse = editInput.value.substring(editInput.selectionStart, editInput.selectionEnd)
+      selectionStart = editInput.selectionStart 
+      selectionEnd = editInput.selectionEnd
+
+      contextMenu = document.getElementById("context-menu")
+
+      contextMenu.classList.remove("hidden")
+      let xCoord = event.clientX 
+      let yCoord = event.clientY 
+
+      contextMenu.style.left = `${xCoord}px`
+      contextMenu.style.top = `${yCoord}px`
+    })
+
+    document.getElementById("context-menu").querySelector("ul").addEventListener("click", async function(){
+      console.log(event.target.dataset.action)
+      actionValue = event.target.getAttribute("data-action")
+      contextMenu.classList.add("hidden")
+      
+      const response =  await fetch (`${httpBase}/ai/assist`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", 
+          "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          action: actionValue, 
+          text: (actionValue == "expand") ? editInput.value : aiResponse  
+        })
+      })
+
+      info = await response.json() 
+      console.log(info)
+
+      sidebar = document.getElementById("sidebar")
+      document.getElementById("response").textContent = info.text 
+      sidebar.classList.remove("hidden")
+    })
+
+    document.getElementById("decline").addEventListener("click", function(){
+      sidebar.classList.add("hidden")
+    })
+
+    document.getElementById("accept").addEventListener("click", function(){
+      if (actionValue === "rewrite"){
+        editInput.value = `${editInput.value.substring(0, selectionStart)}` + info.text + `${editInput.value.substring(selectionEnd)}`
+      }
+      else if (actionValue === "expand"){
+        editInput.value += info.text 
+      }
+      else if (actionValue === "summarize"){
+        editInput.value += "\n\nSummary:\n" + info.text
+      }
+      sidebar.classList.add("hidden")
+      websocket.send(JSON.stringify({type: "update", content: editInput.value}))
+    })
+
+    document.getElementById("brainstorm").addEventListener("click", async function(){
+      brainstormBar = document.getElementById("brainstorm-sidebar")
+      brainstormBar.classList.remove("hidden")
+      actionValue = "brainstorm"
+      const response =  await fetch (`${httpBase}/ai/assist`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", 
+          "Authorization": `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          action: actionValue, 
+          text: editInput.value 
+        })
+      })
+      info = await response.json() 
+      document.getElementById("topics").textContent = info.text 
+    })
+
+    document.getElementById("close").addEventListener("click", function(){
+      brainstormBar.classList.add("hidden")
     })
 
     document.getElementById("logout").addEventListener("click", function(){

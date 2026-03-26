@@ -31,3 +31,10 @@ class UserResponse(BaseModel):
 
   id: int 
   username: str
+
+class AICreate(BaseModel): 
+  action: str 
+  text: str 
+
+class AIResponse(BaseModel): 
+  text: str 
