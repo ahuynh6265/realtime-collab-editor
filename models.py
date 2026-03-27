@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Text, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Text, String, DateTime, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime, timezone 
@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 class Document(Base):
   __tablename__ = "document"
   id = Column(Integer, primary_key=True, autoincrement=True)
+  owner_id = Column(Integer, ForeignKey("user.id"), nullable=False)
   text = Column(Text, nullable=False)
   title = Column(String, nullable=False)
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -30,3 +31,10 @@ class AIHistory(Base):
   created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
   
   document = relationship("Document", back_populates="ai_history")
+
+class DocumentShare(Base):
+  __tablename__ = "share"
+  __table_args__= (UniqueConstraint("document_id", "user_id"),)
+  id = Column(Integer, primary_key=True, autoincrement=True)
+  document_id = Column(Integer, ForeignKey("document.id"), nullable=False)
+  user_id = Column(Integer, ForeignKey("user.id"), nullable=False)

@@ -50,8 +50,5 @@ async def save_accepted_response(response_data: AIHistoryCreate, current_user: d
 def document_history(document_id: int, current_user: dict = Depends(auth.get_current_user), db: Session = Depends(get_db)):
   document = db.query(Document).filter(Document.id == document_id).first() 
   if not document: 
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User ID not found")
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document ID not found")
   return document.ai_history 
-
-
-    

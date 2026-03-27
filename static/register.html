@@ -2,49 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, inital-scale=1.0">
-  <title>Login Page</title>
-  <!-- <script src = "https://cdn.tailwindcss.com"></script> --> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register Page</title>
+  <script src = "https://cdn.tailwindcss.com"></script>
   
 </head>
 
-<body>
-  <label for = "username">Username: </label>
-  <input type = "text" id = "username" placeholder = "Username here"/>
+<body class = "bg-neutral-800 min-h-screen flex items-center justify-center">
+  <div class = "bg-neutral-900 p-8 rounded-lg w-full max-w-sm flex flex-col gap-4"> 
+    <h1 class = "text-white text-2xl font-semibold">Register:</h1>
+    <label class = "text-white text-sm" for = "username">Username: </label>
+    <input class = "bg-neutral-700 text-white rounded px-3 py-2 outline-none w-full" type = "text" id = "username" placeholder = "Username here"/>
+    
+    <label class = "text-white text-sm" for = "password">Password: </label>
+    <input class = "bg-neutral-700 text-white rounded px-3 py-2 outline-none w-full" type = "password" id = "password" placeholder = "Password here"/> 
+
+    <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0 w-full" id = "sign-up">Sign Up</button>
+
+    <div class = "text-red-400 text-sm" id = "error-display"></div>
+    <button class = "text-neutral-400 text-sm text-center hover:underline" onclick = "window.location.href = '/auth/login'">Already have an account? Sign In</button>
+  </div>
+
+  <script>
+    let httpBase = `${window.location.protocol}//${window.location.host}`
   
-  <label for = "password">Password: </label>
-  <input type = "password" id = "password" placeholder = "Password here"/> 
-
-  <button id = "sign-up">Sign Up</button>
-
-  <div id = "error-display"></div>
-</body>
-
-<script>
-  let httpBase = `${window.location.protocol}//${window.location.host}`
-
-  document.getElementById("sign-up").addEventListener("click", async function(){
-    const usernameValue = document.getElementById("username").value
-    const passwordValue = document.getElementById("password").value
-    const errorDiv = document.getElementById("error-display")
-
-    const response = await fetch(`${httpBase}/auth/register`, {
-      method: "POST", 
-      headers: { 
-        "Content-Type": "application/json"
-      }, 
-      body: JSON.stringify({
-        username: usernameValue, 
-        password: passwordValue, 
+    document.getElementById("sign-up").addEventListener("click", async function(){
+      const usernameValue = document.getElementById("username").value
+      const passwordValue = document.getElementById("password").value
+      const errorDiv = document.getElementById("error-display")
+  
+      const response = await fetch(`${httpBase}/auth/register`, {
+        method: "POST", 
+        headers: { 
+          "Content-Type": "application/json"
+        }, 
+        body: JSON.stringify({
+          username: usernameValue, 
+          password: passwordValue, 
+        })
       })
+      if (response.ok){
+        window.location.href = `${httpBase}/auth/login`
+      }
+      else {
+        const error = await response.json() 
+        const msg = Array.isArray(error.detail) ? error.detail[0].msg.split(",").pop().trim() : error.detail
+        errorDiv.innerHTML = msg 
+      }
     })
-    if (response.ok){
-      window.location.href = `${httpBase}/auth/login`
-    }
-    else {
-      const error = await response.json() 
-      const msg = Array.isArray(error.detail) ? error.detail[0].msg.split(",").pop().trim() : error.detail
-      errorDiv.innerHTML = msg 
-    }
-  })
-</script>
+  </script>
+</body>

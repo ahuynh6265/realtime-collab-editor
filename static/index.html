@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, inital-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Collab Editor</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src = "https://cdn.tailwindcss.com"></script>
   <style>
     @keyframes slide-in-left {
@@ -21,6 +22,7 @@
       animation: slide-out-left 0.3s ease forwards;
     }
     #edit {
+      min-height: 1056px;
       background-image: repeating-linear-gradient(
         to bottom, 
         transparent 0px, 
@@ -53,7 +55,7 @@
   <div class = "bg-neutral-900 p-4 rounded-lg mb-4 flex flex-col ">
     <div class = "flex items-center overflow-x-auto gap-4">
       <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" onclick = "window.location.href = '/'">Home</button><span id = "room-indicator" class = "text-white text-sm"></span>
+        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" onclick = "window.location.href = '/home'">Home</button><span id = "room-indicator" class = "text-white text-sm"></span>
       </div>   
 
       <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
@@ -78,6 +80,19 @@
       <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit ">
         <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "logout">Logout</button>
       </div>    
+
+      <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit ml-auto">
+        <button class = "hidden cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "share">Share</button>
+      </div>  
+    </div>
+  </div>
+
+  <div class = "hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center" id = "share-doc">
+    <div class = "bg-neutral-900 rounded-lg p-6 flex flex-col gap-4">
+      <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "share-close">Close</button>
+      <input class = "bg-neutral-700 text-white rounded px-3 py-2 outline-none w-full" type = "text" id = "find-user" placeholder = "Username here"/>
+      <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "send-to-user">Send</button>
+      <div class = "text-red-400 text-sm" id = "display-share-response"></div>
     </div>
   </div>
 
@@ -87,7 +102,8 @@
     </div>
     <div class = "w-0 overflow-x-hidden transition-all duration-300 bg-neutral-900 text-white h-screen" id = "sidebar">
       <div class = "p-4 overflow-y-auto flex flex-col gap-4">
-        <div id = "response"></div>
+        <p class = "text-xs text-neutral-400 uppercase tracking-wide">AI Response:</p>
+        <div class = "bg-neutral-800 rounded-lg p-3 text-sm text-neutral-200 leading-relaxed" id = "response"></div>
         <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "accept">Accept</button>
         <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "decline">Decline</button>
       </div>
@@ -96,19 +112,21 @@
     <div class = "w-0 overflow-x-hidden transition-all duration-300 bg-neutral-900 text-white h-screen" id = "brainstorm-sidebar">
       <div class = "p-4 overflow-y-auto flex flex-col gap-4">
         <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "brainstorm-close">Close</button>
-        <div id = "topics"></div>
+        <p class = "text-xs text-neutral-400 uppercase tracking-wide">Topics:</p>
+        <div class = "bg-neutral-800 rounded-lg p-3 text-sm text-neutral-200 leading-relaxed" id = "topics"></div>
       </div>
     </div>
 
     <div class = "w-0 overflow-x-hidden transition-all duration-300 bg-neutral-900 text-white h-screen" id = "history-sidebar">
       <div class = "p-4 overflow-y-auto flex flex-col gap-4">
       <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "history-close">Close</button>
+      <p class = "text-xs text-neutral-400 uppercase tracking-wide">History:</p>
       <div id = "history-info"></div>
       </div>
     </div>
   </div>
 
-  <div class = "hidden fixed bottom-4 left-4 bg-neutral-700 text-white px-4 py-2 rounded-lg shadow-lg animate-slideleft" id = "notifications"></div>
+  <div class = "hidden fixed bottom-4 left-4 bg-neutral-700 text-white px-4 py-2 rounded-lg shadow-lg" id = "notifications"></div>
 
   <div id = "context-menu" class = "hidden absolute context-menu bg-neutral-900 rounded-lg shadow-lg border border-neutral-700 py-1 w-40">
     <ul class = "list-none p-0 m-0">
@@ -121,7 +139,7 @@
 
   <script>
     let isLoaded = false
-    let websocket, currentRoom, editInput = document.getElementById("edit"), typingTimer, username, aiResponse, info, contextMenu, sidebar, actionValue, selectionStart, selectionEnd, brainstormBar, originalText, id, userIcon
+    let websocket, currentRoom, editInput = document.getElementById("edit"), typingTimer, notifTimer, notifHideTimer, username, aiResponse, info, contextMenu, sidebar, actionValue, selectionStart, selectionEnd, brainstormBar, originalText, id, userIcon, currentUser, share
     let typingUsers = new Set() 
     let httpBase = `${window.location.protocol}//${window.location.host}`
     let wsBase = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`
@@ -160,7 +178,7 @@
     id = new URLSearchParams(window.location.search).get("id")
     const token = localStorage.getItem("token")
     if (!token) {
-      window.location.href = `${httpBase}/auth/login`
+      window.location.href = `${httpBase}/`
     }
 
     fetch(`${httpBase}/auth/me`, {
@@ -177,24 +195,24 @@
       isLoaded = false
       if(websocket) {websocket.close()}
 
-      const usernameDiv = document.getElementById("user-display")
       const notifDiv = document.getElementById("notifications")
 
       currentRoom = id
       websocket = new WebSocket(`${wsBase}/ws/${id}/${username}`)
 
-      websocket.onopen = function(){
-      } 
-
       websocket.onmessage = function(event){
-        console.log(event.data)
         const edits  = document.getElementById("edit")
         const title = document.getElementById("title")
         const data = JSON.parse(event.data)
-        const typingDiv = document.getElementById("typing")
 
         if (data.type == "update"){
           if (isLoaded == false){
+            currentUser = JSON.parse(atob(token.split(".")[1]))
+            if (currentUser.id === data.owner) {
+              share = document.getElementById("share")
+              share.classList.remove("hidden")
+            }
+
             title.value = data.title 
             isLoaded = true
           }
@@ -209,13 +227,18 @@
         }
         else if (data.type == "notification"){
           notifDiv.textContent = data.message 
+          clearTimeout(notifTimer)
+          clearTimeout(notifHideTimer)
           notifDiv.classList.remove("hidden")
+          notifDiv.classList.remove("slide-in")
+          notifDiv.classList.remove("slide-out")
+          void notifDiv.offsetWidth
           notifDiv.classList.add("slide-in")
-          setTimeout(() => {
+          notifTimer = setTimeout(() => {
             notifDiv.classList.remove("slide-in")
             notifDiv.classList.add("slide-out")
           }, 3000)
-          setTimeout(() => {
+          notifHideTimer = setTimeout(() => {
             notifDiv.classList.add("hidden")
             notifDiv.classList.remove("slide-out")
           }, 3300)
@@ -231,6 +254,8 @@
             typingUsers.add(data.username)
             document.getElementById("typing-user").textContent = Array.from(typingUsers).join(", ") + " is typing"
             document.getElementById("typing").classList.remove("hidden")
+            document.getElementById("typing").classList.remove("slide-out")
+            void document.getElementById("typing").offsetWidth
             document.getElementById("typing").classList.add("slide-in")
           }
 
@@ -240,7 +265,9 @@
               document.getElementById("typing").classList.remove("slide-in")
               document.getElementById("typing").classList.add("slide-out")
               setTimeout(() => {
-                document.getElementById("typing").classList.add("hidden")
+                if (typingUsers.size === 0){
+                  document.getElementById("typing").classList.add("hidden")
+                }
               }, 300)
             }
             else {
@@ -256,7 +283,7 @@
     })
     document.getElementById("save").addEventListener("click", function(){
       const titleValue = document.getElementById("title").value
-      const title = fetch(`${httpBase}/documents/${currentRoom}`,{
+      fetch(`${httpBase}/documents/${currentRoom}`,{
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -268,7 +295,6 @@
     document.getElementById("room-indicator").textContent = id
 
     document.getElementById("edit").addEventListener("input", function(){
-      const typingDiv =  document.getElementById("typing")
       websocket.send(JSON.stringify({type: "update", content: editInput.value}))
       const scrollPos = window.scrollY 
       this.style.height = "auto"
@@ -301,7 +327,6 @@
     })
 
     document.getElementById("context-menu").querySelector("ul").addEventListener("click", async function(){
-      console.log(event.target.dataset.action)
       actionValue = event.target.getAttribute("data-action")
       contextMenu.classList.add("hidden")
       originalText = (actionValue == "expand") ? editInput.value : aiResponse
@@ -319,7 +344,6 @@
       })
 
       info = await response.json() 
-      console.log(info)
 
       sidebar = document.getElementById("sidebar")
       closeSidebars() 
@@ -377,7 +401,7 @@
         })
       })
       info = await response.json() 
-      document.getElementById("topics").textContent = info.text 
+      document.getElementById("topics").innerHTML = marked.parse(info.text) 
     })
 
     document.getElementById("brainstorm-close").addEventListener("click", function(){
@@ -401,12 +425,15 @@
         const historyDiv = document.getElementById("history-info")
         historyDiv.innerHTML = ""
         for (const history of data){
-          const createdAt = new Date(history.created_at).toLocaleDateString()
+          const createdAt = new Date(history.created_at).toLocaleString()
           const entry = document.createElement("div")
+          entry.className = "flex flex-col mb-2"
           const summary = document.createElement("div")
+          summary.className = "bg-neutral-800 px-3 py-2 rounded-lg cursor-pointer hover:bg-neutral-700 text-sm text-white"
           summary.textContent = `${history.username} - ${history.action} - ${createdAt}`
 
           const details = document.createElement("div")
+          details.className = "bg-neutral-700 px-3 py-2 rounded-b-lg text-sm text-neutral-300 mt-1"
           details.innerHTML = `Original: ${history.text}<br><br>AI Response: ${history.ai_response}`
           details.classList.add("hidden")
 
@@ -431,10 +458,44 @@
       }
     })
 
+    document.getElementById("share").addEventListener("click", function(){
+      document.getElementById("share-doc").classList.remove("hidden")
+      document.getElementById("display-share-response").innerHTML = ""
+    })
+
+    document.getElementById("send-to-user").addEventListener("click", async function(){
+      const getUsername = document.getElementById("find-user").value
+      
+      const response = await fetch  (`${httpBase}/documents/${currentRoom}/share`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({username: getUsername})
+      })
+      info = await response.json()
+
+      const shareResponseDiv = document.getElementById("display-share-response")
+      if (response.ok) {
+        shareResponseDiv.className = "text-green-400 text-sm"
+        shareResponseDiv.innerHTML = info.message 
+        document.getElementById("find-user").value = ""
+      }
+      else {
+        shareResponseDiv.className = "text-red-400 text-sm"
+        shareResponseDiv.innerHTML = info.detail
+      }
+    })
+
+    document.getElementById("share-close").addEventListener("click", function(){
+      document.getElementById("share-doc").classList.add("hidden")
+    })
+
     document.getElementById("logout").addEventListener("click", function(){
       if(websocket) {websocket.close()}
       localStorage.removeItem("token")
-      window.location.href = `${httpBase}/auth/login`
+      window.location.href = `${httpBase}/`
     })
   </script>
 

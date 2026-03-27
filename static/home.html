@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, inital-scale=1.0">
-  <title>Documents Page</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home | Realtime Collab Editor</title>
   <script src = "https://cdn.tailwindcss.com"></script>
   
 </head>
@@ -11,19 +11,25 @@
 <body class = "bg-neutral-800 min-h-screen p-8">
   <div class = "max-w-4xl mx-auto"> 
   <div class = "flex justify-between items-center">
-  <h1 class = "text-white text-2xl font-semibold mb-2">Documents List: </h1>
-  <button id = "create" class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-4 py-2 hover:opacity-75 transition-opacity duration-200">Create Document</button>
-  <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-4 py-2 hover:opacity-75 transition-opacity duration-200" id = "logout">Logout</button>
+    <h1 class = "text-white text-2xl font-semibold mb-2">Documents List: </h1>
+    <button id = "create" class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-4 py-2 hover:opacity-75 transition-opacity duration-200">Create Document</button>
+    <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-4 py-2 hover:opacity-75 transition-opacity duration-200" id = "logout">Logout</button>
   </div>  
+  
   <div class = "border-b border-neutral-600 pb-4 mb-4"></div>
+  <h2 class = "text-white text-xl font-semibold mb-2">My Documents:</h2>
   <div id = "document-list"></div>
+
+  <div class = "border-b border-neutral-600 pb-4 mb-4"></div>
+  <h2 class = "text-white text-xl font-semibold mb-2">Shared with me:</h2>
+  <div id = "shared-list"></div>
 
   <script>
     let httpBase = `${window.location.protocol}//${window.location.host}`
 
     const token = localStorage.getItem("token")
     if (!token) {
-      window.location.href = `${httpBase}/auth/login`
+      window.location.href = `${httpBase}/`
     }
 
     const docDiv = document.getElementById("document-list")
@@ -37,8 +43,41 @@
     .then(response => response.json())
     .then(data => {
       for (const doc of data){
-        const updatedAt = new Date(doc.updated_at).toLocaleDateString() 
-        docDiv.innerHTML += `<div class = "bg-neutral-700 rounded-lg mb-2 transition-colors hover:bg-neutral-600"><a class = "text-white hover:underline rounded block flex items-center gap-3 px-4 py-3 justify-between" href="/editor?id=${doc.id}">📄 ${doc.title} <span class = "text-neutral-400 text-sm">${updatedAt}</span></a></div>`
+        const createdAt = new Date(doc.created_at).toLocaleString()
+        const updatedAt = new Date(doc.updated_at).toLocaleString() 
+        docDiv.innerHTML += 
+        `<div class = "bg-neutral-700 rounded-lg mb-2 transition-colors hover:bg-neutral-600">
+          <a class = "text-white hover:underline rounded block flex items-center gap-3 px-4 py-3 justify-between" href="/editor?id=${doc.id}">📄 ${doc.title}
+            <div class = "flex flex-col"> 
+              <span class = "text-neutral-400 text-sm">Created: ${createdAt}</span> 
+              <span class = "text-neutral-400 text-sm">Last updated: ${updatedAt}</span>
+            </div> 
+          </a>
+        </div>`
+      }
+    })
+
+    const sharedDiv = document.getElementById("shared-list")
+    fetch(`${httpBase}/documents/shared`, {
+      method: "GET", 
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      for (const doc of data){
+        const createdAt = new Date(doc.created_at).toLocaleString()
+        const updatedAt = new Date(doc.updated_at).toLocaleString() 
+        sharedDiv.innerHTML += 
+        `<div class = "bg-neutral-700 rounded-lg mb-2 transition-colors hover:bg-neutral-600">
+          <a class = "text-white hover:underline rounded block flex items-center gap-3 px-4 py-3 justify-between" href="/editor?id=${doc.id}">📄 ${doc.title}
+            <div class = "flex flex-col"> 
+              <span class = "text-neutral-400 text-sm">Created: ${createdAt}</span> 
+              <span class = "text-neutral-400 text-sm">Last updated: ${updatedAt}</span>
+            </div> 
+          </a>
+        </div>`
       }
     })
 
@@ -56,7 +95,7 @@
     
     document.getElementById("logout").addEventListener("click", function(){
       localStorage.removeItem("token")
-      window.location.href = `${httpBase}/auth/login`
+      window.location.href = `${httpBase}/`
     })
 
 

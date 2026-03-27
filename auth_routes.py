@@ -29,7 +29,7 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
   user = db.query(User).filter(user_data.username == User.username).first()
   if user: 
     if auth.verify_password(user_data.password, user.password):
-      token = auth.create_token(user_data.username)
+      token = auth.create_token(user_data.username, user.id)
       return token 
     else: 
       raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Username or password incorrect.")

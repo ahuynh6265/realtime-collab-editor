@@ -2,10 +2,11 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPExcept
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from database import engine, SessionLocal, Base
-from models import Document
-from schemas import DocumentUpdate, DocumentResponse
+from models import Document, DocumentShare, User
+from schemas import DocumentUpdate, DocumentResponse, DocumentShareCreate
 import json, connection_manager, auth
 from auth_routes import router as auth_router 
 from ai_routes import router as ai_router
@@ -35,18 +36,21 @@ def get_db():
 
 
 @app.get("/")
-def get_home(): 
+def get_landing(): 
+  return FileResponse("static/landing.html")
+
+@app.get("/home")
+def get_home():
   return FileResponse("static/home.html")
 
 @app.websocket("/ws/{document_id}/{username}")
 async def websocket_endpoint(websocket: WebSocket, document_id: int, username: str, db: Session = Depends(get_db)):
   room = db.query(Document).filter(Document.id == document_id).first() 
   if not room: 
-    room = Document(title="Untitled", text = "")
-    db.add(room)
-    db.commit() 
+    await websocket.close() 
+    return 
   await manager.connect(websocket, document_id, username)
-  data = {"type": "update", "content": room.text, "title": room.title}
+  data = {"type": "update", "content": room.text, "title": room.title, "owner": room.owner_id}
   await manager.broadcast_user_only(websocket, data)
 
   data = {"type": "notification", "message": f"{username} has joined"}
@@ -100,19 +104,46 @@ async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: S
 
 @app.get("/documents", response_model=list[DocumentResponse])
 def list_documents(db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)):
-  return db.query(Document).order_by(Document.id)
+  return db.query(Document).order_by(Document.id).filter(Document.owner_id == current_user["id"]).all() 
 
 @app.get("/editor")
 def get_editor(): return FileResponse("static/index.html")
 
 @app.post("/documents")
 def create_doc(db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)):
-  new_doc = Document(title="Untitled", text = "")
+  new_doc = Document(title="Untitled", text = "", owner_id = current_user["id"])
   db.add(new_doc)
   db.commit() 
   db.refresh(new_doc)
 
   return new_doc.id
+
+@app.get("/documents/shared", response_model=list[DocumentResponse])
+def get_shared(db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)):
+  documents = db.query(DocumentShare).filter(DocumentShare.user_id == current_user["id"]).all() 
+
+  shared_docs = []
+
+  for document in documents: 
+    shared_docs.append(db.query(Document).filter(Document.id == document.document_id).first())
+  
+  return shared_docs 
+
+
+@app.post("/documents/{doc_id}/share")
+def share_doc(doc_id: int, doc_data: DocumentShareCreate, db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)): 
+  username = db.query(User).filter(User.username == doc_data.username).first()
+  if not username: 
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
+  
+  document_share = DocumentShare(document_id = doc_id, user_id = username.id)
+  try:
+    db.add(document_share)
+    db.commit()
+    db.refresh(document_share)
+  except IntegrityError:
+    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"The document has already been shared with {doc_data.username}")
+  return {"message": "Document shared sucessfully."}
 
 @app.get("/auth/login")
 def get_login(): return FileResponse("static/login.html")

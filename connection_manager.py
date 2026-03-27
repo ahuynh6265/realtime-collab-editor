@@ -15,11 +15,20 @@ class ConnectionManager:
   async def broadcast(self, websocket, document_id, data):
     for client in self.connected_clients[document_id].keys():
       if client != websocket:
-        await client.send_text(json.dumps(data))
+        try: 
+          await client.send_text(json.dumps(data))
+        except RuntimeError:
+          pass
   
   async def broadcast_all(self, document_id, data):
     for client in self.connected_clients[document_id].keys():
-      await client.send_text(json.dumps(data))
+      try: 
+        await client.send_text(json.dumps(data))
+      except RuntimeError:
+        pass
   
   async def broadcast_user_only(self, websocket, data):
-    await websocket.send_text(json.dumps(data))
+    try: 
+      await websocket.send_text(json.dumps(data))
+    except RuntimeError:
+      pass

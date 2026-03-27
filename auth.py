@@ -16,8 +16,8 @@ def hash_password(password):
 def verify_password(password, hash_password): 
   return pbkdf2_sha256.verify(password, hash_password)
 
-def create_token(username):
-  token = jwt.encode({"username": username}, SECRET_KEY, algorithm="HS256")
+def create_token(username, id):
+  token = jwt.encode({"username": username, "id": id}, SECRET_KEY, algorithm="HS256")
   return token
 
 def get_current_user(token: str = Depends(oauth2_scheme)):
