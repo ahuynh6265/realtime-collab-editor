@@ -38,3 +38,20 @@ class AICreate(BaseModel):
 
 class AIResponse(BaseModel): 
   text: str 
+
+class AIHistoryCreate(BaseModel):
+  document_id: int 
+  action: str
+  text: str 
+  ai_response: str 
+
+class AIHistoryResponse(BaseModel): 
+  model_config = ConfigDict(from_attributes=True)
+
+  id: int 
+  document_id: int
+  username: str 
+  action: str 
+  text: str 
+  ai_response: str 
+  created_at: datetime 

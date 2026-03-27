@@ -20,73 +20,144 @@
     .slide-out {
       animation: slide-out-left 0.3s ease forwards;
     }
+    #edit {
+      background-image: repeating-linear-gradient(
+        to bottom, 
+        transparent 0px, 
+        transparent 1054px, 
+        #5a5a5a 1054px, 
+        #5a5a5a 1056px 
+      );
+    }
+
+    @keyframes blink {
+      0%, 100% {opacity: 0;}
+      50% {opacity: 1;}
+    }
+    .dot {
+      animation: blink 1.2s infinite ease-in-out;
+    }
+    .dot:nth-child(2) {
+      animation-delay: 0s;
+    }
+    .dot:nth-child(3) {
+      animation-delay: 0.2s;
+    }
+    .dot:nth-child(4) {
+      animation-delay: 0.4s;
+    }
   </style>
 </head>
 
 <body class = "bg-neutral-800 min-h-screen p-8">
-  <input class = "hidden" type ="number" id="room"/>
+  <div class = "bg-neutral-900 p-4 rounded-lg mb-4 flex flex-col ">
+    <div class = "flex items-center overflow-x-auto gap-4">
+      <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
+        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" onclick = "window.location.href = '/'">Home</button><span id = "room-indicator" class = "text-white text-sm"></span>
+      </div>   
 
-  <div class = "bg-neutral-900 p-4 rounded-lg mb-4 flex items-center justify-between overflow-x-auto gap-4">
-    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-      <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" onclick = "window.location.href = '/'">Home</button>
-    </div>   
-
-    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-      <label class = "text-white" for ="title">Title: </label>
-      <input class = "bg-neutral-700 text-white rounded px-3 py-1 outline-none w-48" type ="text" id ="title" placeholder= "Title here"/> 
-      <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "save">Save Title Name</button>
-    </div> 
-
-    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-      <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "connect">Connect</button><span id = "room-indicator" class = "text-white text-sm"></span>
+      <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
+        <label class = "text-white" for ="title">Title: </label>
+        <input class = "bg-neutral-700 text-white rounded px-3 py-1 outline-none w-48" type ="text" id ="title" placeholder= "Title here"/> 
+        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "save">Save Title Name</button>
+      </div> 
+      
+      <div class = "rounded-full w-8 h-8 bg-gradient-to-b from-orange-400 to-orange-800 flex items-center justify-center text-white text-sm font-bold ml-auto" id = "user-icon"></div>
+      
     </div>
 
-    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-      <button id = "brainstorm">Brainstorm</button>
-    </div> 
+    <div class = "flex items-center overflow-x-auto gap-4">
+      <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
+        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "brainstorm">Brainstorm</button>
+      </div> 
 
-    <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
-      <button id = "logout">Logout</button>
-    </div>    
+      <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit">
+        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "history">History</button>
+      </div>
 
+      <div class = "flex items-center gap-2 whitespace-nowrap min-w-fit ">
+        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "logout">Logout</button>
+      </div>    
+    </div>
   </div>
 
-  <div class = "flex items-center">
-    <textarea class = "w-full h-screen bg-neutral-700 text-white rounded-lg p-4 outline-none resize-none" id="edit" placeholder="Text here"></textarea>
-    <div class = "hidden" id = "sidebar">
-      <label id = "response">Response: </label>
-      <button id = "accept">Accept</button>
-      <button id = "decline">Decline</button>
+  <div class = "flex items-start">
+    <div class = "flex flex-1 justify-center">
+      <textarea class = "w-full max-w-4xl mx-auto overflow-hidden bg-neutral-700 text-white rounded-lg p-4 outline-none resize-none" id="edit" placeholder="Text here"></textarea>
+    </div>
+    <div class = "w-0 overflow-x-hidden transition-all duration-300 bg-neutral-900 text-white h-screen" id = "sidebar">
+      <div class = "p-4 overflow-y-auto flex flex-col gap-4">
+        <div id = "response"></div>
+        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "accept">Accept</button>
+        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "decline">Decline</button>
+      </div>
     </div>
 
-    <div class = "hidden" id = "brainstorm-sidebar">
-      <button id = "close">Close</button>
-      <label id = "topics"></label>
+    <div class = "w-0 overflow-x-hidden transition-all duration-300 bg-neutral-900 text-white h-screen" id = "brainstorm-sidebar">
+      <div class = "p-4 overflow-y-auto flex flex-col gap-4">
+        <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "brainstorm-close">Close</button>
+        <div id = "topics"></div>
+      </div>
     </div>
 
+    <div class = "w-0 overflow-x-hidden transition-all duration-300 bg-neutral-900 text-white h-screen" id = "history-sidebar">
+      <div class = "p-4 overflow-y-auto flex flex-col gap-4">
+      <button class = "cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-3 py-1 hover:opacity-75 transition-opacity duration-200 flex-shrink-0" id = "history-close">Close</button>
+      <div id = "history-info"></div>
+      </div>
+    </div>
   </div>
 
-  <div id = "typing"></div>
-  <div id = "user-display"></div>
   <div class = "hidden fixed bottom-4 left-4 bg-neutral-700 text-white px-4 py-2 rounded-lg shadow-lg animate-slideleft" id = "notifications"></div>
-  <div id = "active-users"></div>
 
-  <div id = "context-menu" class = "hidden absolute context-menu">
-    <ul>
-      <li data-action = "rewrite">Rewrite</li>
-      <li data-action = "expand">Expand</li>
-      <li data-action = "summarize">Summarize</li>
+  <div id = "context-menu" class = "hidden absolute context-menu bg-neutral-900 rounded-lg shadow-lg border border-neutral-700 py-1 w-40">
+    <ul class = "list-none p-0 m-0">
+      <li data-action = "rewrite" class = "px-4 py-2 text-white text-sm cursor-pointer hover:bg-neutral-700">Rewrite</li>
+      <li data-action = "expand" class = "px-4 py-2 text-white text-sm cursor-pointer hover:bg-neutral-700">Expand</li>
+      <li data-action = "summarize" class = "px-4 py-2 text-white text-sm cursor-pointer hover:bg-neutral-700">Summarize</li>
     </ul>
   </div>
 
 
   <script>
     let isLoaded = false
-    let websocket, currentRoom, editInput = document.getElementById("edit"), typingTimer, username, aiResponse, info, contextMenu, sidebar, actionValue, selectionStart, selectionEnd, brainstormBar 
+    let websocket, currentRoom, editInput = document.getElementById("edit"), typingTimer, username, aiResponse, info, contextMenu, sidebar, actionValue, selectionStart, selectionEnd, brainstormBar, originalText, id, userIcon
     let typingUsers = new Set() 
     let httpBase = `${window.location.protocol}//${window.location.host}`
     let wsBase = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}`
 
+    function closeSidebars() {
+      document.getElementById("sidebar").classList.remove("w-80")
+      document.getElementById("brainstorm-sidebar").classList.remove("w-80")
+      document.getElementById("history-sidebar").classList.remove("w-80")
+    }
+
+    function renderUsers(users) {
+      userIcon = document.getElementById("user-icon")
+      userIcon.innerHTML = ""
+      const totalCircles = Math.min(users.length, 3)
+      let circle
+      for (let i = 0; i < totalCircles; i++){
+        circle = document.createElement("div")
+        circle.className = "rounded-full w-8 h-8 bg-gradient-to-b from-orange-400 to-orange-800 text-white flex items-center justify-center text-sm font-bold flex-shrink-0"
+        circle.textContent = users[i][0].toUpperCase() 
+        circle.style.border = "2px solid #262626"
+
+        if (i > 0){
+          circle.style.marginLeft = "-12px"
+        }
+        userIcon.appendChild(circle)
+      }
+      if (users.length > 3){
+        circle = document.createElement("div")
+        circle.className = "rounded-full w-8 h-8 bg-gradient-to-b from-orange-400 to-orange-800 text-white flex items-center justify-center text-sm font-bold flex-shrink-0"
+        circle.textContent = "+" + (users.length - 3)
+        circle.style.marginLeft = "-12px"
+        userIcon.appendChild(circle)
+      }
+    }
+
+    id = new URLSearchParams(window.location.search).get("id")
     const token = localStorage.getItem("token")
     if (!token) {
       window.location.href = `${httpBase}/auth/login`
@@ -101,27 +172,18 @@
     .then(response => response.json())
     .then(data => {
       username = data 
-    })
-
-    const id = new URLSearchParams(window.location.search).get("id")
-    document.getElementById("room-indicator").textContent = id
-    document.getElementById("room").value = id
-
-
-    document.getElementById("connect").addEventListener("click", function(){
+      userIcon = document.getElementById("user-icon")
+      userIcon.textContent = username[0].toUpperCase()
       isLoaded = false
       if(websocket) {websocket.close()}
 
       const usernameDiv = document.getElementById("user-display")
       const notifDiv = document.getElementById("notifications")
-      const activeDiv = document.getElementById("active-users")
-      const room = document.getElementById("room").value  
 
-      currentRoom = room
-      websocket = new WebSocket(`${wsBase}/ws/${room}/${username}`)
+      currentRoom = id
+      websocket = new WebSocket(`${wsBase}/ws/${id}/${username}`)
 
       websocket.onopen = function(){
-        usernameDiv.innerHTML = `<p>${username}: </p>`
       } 
 
       websocket.onmessage = function(event){
@@ -136,7 +198,14 @@
             title.value = data.title 
             isLoaded = true
           }
-          edits.value = data.content
+
+          if (edits.value !== data.content){
+            edits.value = data.content
+            const scrollPos = window.scrollY
+            edits.style.height = "auto"
+            edits.style.height = edits.scrollHeight + "px"
+            window.scrollTo(0, scrollPos)
+          }
         }
         else if (data.type == "notification"){
           notifDiv.textContent = data.message 
@@ -152,38 +221,39 @@
           }, 3300)
         }
         else if (data.type == "users"){
-          activeDiv.innerHTML = `Current Users:<br>` + data.users.join(", ")
+          renderUsers(data.users)
         }
         else if (data.type == "title"){
           title.value = data.title
         }
         else if (data.type == "typing"){
           if (data.typing == true){
-            let displayUsers = ""
             typingUsers.add(data.username)
-            for (const users of typingUsers.values()){
-              displayUsers += `${users} is typing... <br>`
-            }
-            typingDiv.innerHTML = displayUsers
+            document.getElementById("typing-user").textContent = Array.from(typingUsers).join(", ") + " is typing"
+            document.getElementById("typing").classList.remove("hidden")
+            document.getElementById("typing").classList.add("slide-in")
           }
 
           else if (data.typing == false){
-            let displayUsers = ""
             typingUsers.delete(data.username)
-            for (const users of typingUsers.values()){
-              displayUsers += `${users} is typing... <br>`
+            if (typingUsers.size === 0){
+              document.getElementById("typing").classList.remove("slide-in")
+              document.getElementById("typing").classList.add("slide-out")
+              setTimeout(() => {
+                document.getElementById("typing").classList.add("hidden")
+              }, 300)
             }
-            typingDiv.innerHTML = displayUsers
+            else {
+              document.getElementById("typing-user").textContent = Array.from(typingUsers).join(", ") + " is typing"
+            }
           }
         }
-
       }
 
       websocket.onclose = function(){
-        const disconnected = document.getElementById("edit").value = "Disconected"
+        document.getElementById("edit").value = "Disconnected"
       }
     })
-
     document.getElementById("save").addEventListener("click", function(){
       const titleValue = document.getElementById("title").value
       const title = fetch(`${httpBase}/documents/${currentRoom}`,{
@@ -195,10 +265,15 @@
         body: JSON.stringify({title: titleValue})
       })
     })
+    document.getElementById("room-indicator").textContent = id
 
     document.getElementById("edit").addEventListener("input", function(){
       const typingDiv =  document.getElementById("typing")
       websocket.send(JSON.stringify({type: "update", content: editInput.value}))
+      const scrollPos = window.scrollY 
+      this.style.height = "auto"
+      this.style.height = this.scrollHeight + "px"
+      window.scrollTo(0, scrollPos)
 
       clearTimeout(typingTimer)
       websocket.send(JSON.stringify({type: "typing", typing: true}))
@@ -213,8 +288,10 @@
       selectionStart = editInput.selectionStart 
       selectionEnd = editInput.selectionEnd
 
-      contextMenu = document.getElementById("context-menu")
+      editInput.focus()
+      editInput.setSelectionRange(selectionStart, selectionEnd)
 
+      contextMenu = document.getElementById("context-menu")
       contextMenu.classList.remove("hidden")
       let xCoord = event.clientX 
       let yCoord = event.clientY 
@@ -227,7 +304,8 @@
       console.log(event.target.dataset.action)
       actionValue = event.target.getAttribute("data-action")
       contextMenu.classList.add("hidden")
-      
+      originalText = (actionValue == "expand") ? editInput.value : aiResponse
+
       const response =  await fetch (`${httpBase}/ai/assist`, {
         method: "POST",
         headers: {
@@ -236,7 +314,7 @@
         },
         body: JSON.stringify({
           action: actionValue, 
-          text: (actionValue == "expand") ? editInput.value : aiResponse  
+          text: originalText
         })
       })
 
@@ -244,15 +322,16 @@
       console.log(info)
 
       sidebar = document.getElementById("sidebar")
+      closeSidebars() 
       document.getElementById("response").textContent = info.text 
-      sidebar.classList.remove("hidden")
+      sidebar.classList.add("w-80")
     })
 
     document.getElementById("decline").addEventListener("click", function(){
-      sidebar.classList.add("hidden")
+      sidebar.classList.remove("w-80")
     })
 
-    document.getElementById("accept").addEventListener("click", function(){
+    document.getElementById("accept").addEventListener("click", async function(){
       if (actionValue === "rewrite"){
         editInput.value = `${editInput.value.substring(0, selectionStart)}` + info.text + `${editInput.value.substring(selectionEnd)}`
       }
@@ -262,13 +341,29 @@
       else if (actionValue === "summarize"){
         editInput.value += "\n\nSummary:\n" + info.text
       }
-      sidebar.classList.add("hidden")
+      sidebar.classList.remove("w-80")
       websocket.send(JSON.stringify({type: "update", content: editInput.value}))
+
+      const history = await fetch (`${httpBase}/ai/history`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }, 
+        body: JSON.stringify({
+          document_id: currentRoom, 
+          action: actionValue, 
+          text: originalText,  
+          ai_response: info.text 
+        })
+      })
     })
 
     document.getElementById("brainstorm").addEventListener("click", async function(){
+      closeSidebars() 
+      document.getElementById("topics").textContent = ""
       brainstormBar = document.getElementById("brainstorm-sidebar")
-      brainstormBar.classList.remove("hidden")
+      brainstormBar.classList.add("w-80")
       actionValue = "brainstorm"
       const response =  await fetch (`${httpBase}/ai/assist`, {
         method: "POST",
@@ -285,8 +380,55 @@
       document.getElementById("topics").textContent = info.text 
     })
 
-    document.getElementById("close").addEventListener("click", function(){
-      brainstormBar.classList.add("hidden")
+    document.getElementById("brainstorm-close").addEventListener("click", function(){
+      document.getElementById("topics").textContent = ""
+      brainstormBar.classList.remove("w-80")
+    })
+
+    document.getElementById("history").addEventListener("click", function(){
+      closeSidebars()
+      document.getElementById("history-sidebar").classList.add("w-80")
+
+      fetch(`${httpBase}/ai/history/${currentRoom}`, {
+        method: "GET", 
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+      
+      .then(response => response.json())
+      .then(data => {
+        const historyDiv = document.getElementById("history-info")
+        historyDiv.innerHTML = ""
+        for (const history of data){
+          const createdAt = new Date(history.created_at).toLocaleDateString()
+          const entry = document.createElement("div")
+          const summary = document.createElement("div")
+          summary.textContent = `${history.username} - ${history.action} - ${createdAt}`
+
+          const details = document.createElement("div")
+          details.innerHTML = `Original: ${history.text}<br><br>AI Response: ${history.ai_response}`
+          details.classList.add("hidden")
+
+          summary.addEventListener("click", () => details.classList.toggle("hidden"))
+
+          entry.appendChild(summary)
+          entry.appendChild(details)
+          historyDiv.appendChild(entry)
+        }
+      })
+    })
+
+    document.getElementById("history-close").addEventListener("click", function(){
+      closeSidebars() 
+    })
+
+    document.addEventListener("click", function(){
+      if (contextMenu){
+        if (!contextMenu.contains(event.target)){
+          contextMenu.classList.add("hidden")
+        }
+      }
     })
 
     document.getElementById("logout").addEventListener("click", function(){
@@ -295,4 +437,11 @@
       window.location.href = `${httpBase}/auth/login`
     })
   </script>
+
+  <div class = "hidden fixed bottom-4 left-4 bg-neutral-900 text-white px-4 py-2 rounded-lg flex items-center gap-2" id = "typing">
+    <span id = "typing-user"></span>
+    <span class = "dot inline-block w-2 h-2 rounded-full bg-white"></span>
+    <span class = "dot inline-block w-2 h-2 rounded-full bg-white"></span>
+    <span class = "dot inline-block w-2 h-2 rounded-full bg-white"></span>
+  </div>
 </body> 

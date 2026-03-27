@@ -88,7 +88,7 @@ async def websocket_endpoint(websocket: WebSocket, document_id: int, username: s
 async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)):
   document = db.query(Document).filter(Document.id == document_id).first() 
   if not document: 
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User ID not found")
+    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document ID not found")
   document.title = document_data.title
   db.commit()
   db.refresh(document)
