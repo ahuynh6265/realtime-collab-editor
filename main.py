@@ -136,6 +136,9 @@ def share_doc(doc_id: int, doc_data: DocumentShareCreate, db: Session = Depends(
   if not username: 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
   
+  if username.id == current_user["id"]:
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot share the document with yourself")
+  
   document_share = DocumentShare(document_id = doc_id, user_id = username.id)
   try:
     db.add(document_share)
