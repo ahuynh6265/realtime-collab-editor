@@ -17,8 +17,8 @@ def get_db():
   try: yield db
   finally: db.close() 
 
-@limiter.limit("20/minute")
 @router.post("/ai/assist", response_model=AIResponse)
+@limiter.limit("20/minute")
 async def create_response(request: Request, response_data: AICreate, current_user: dict = Depends(auth.get_current_user)): 
   if response_data.action == "rewrite":
     prompt = f"Rewrite the following and return only one version, do not write any headings: {response_data.text}"
