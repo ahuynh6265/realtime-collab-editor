@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import AIHistory, Document 
 from schemas import AICreate, AIResponse, AIHistoryCreate, AIHistoryResponse
 from dotenv import load_dotenv 
 import anthropic, os, auth
+from limiter import limiter 
 
 load_dotenv()
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
@@ -16,8 +17,9 @@ def get_db():
   try: yield db
   finally: db.close() 
 
+@limiter.limit("20/minute")
 @router.post("/ai/assist", response_model=AIResponse)
-async def create_response(response_data: AICreate, current_user: dict = Depends(auth.get_current_user)): 
+async def create_response(request: Request, response_data: AICreate, current_user: dict = Depends(auth.get_current_user)): 
   if response_data.action == "rewrite":
     prompt = f"Rewrite the following and return only one version, do not write any headings: {response_data.text}"
   elif response_data.action == "expand":

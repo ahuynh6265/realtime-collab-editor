@@ -37,12 +37,12 @@ https://realtime-collab-editor-oj9l.onrender.com/
 - Anthropic AI assist - rewrite, expand, summarize, brainstorm 
 - AI History per document 
 - Context menu (right click on selected text)
+- Rate limiting on AI endpoints
 
 ## Known Limitations 
 - No operational transformation (editor uses last write wins for concurrent edits)
 - No cursor presence 
 - No WebSocket auto-reconnect 
-- No rate limiting on AI endpoints
 - Safari browser context menu compatibility issue
 - Plaintext area (no rich text)
 

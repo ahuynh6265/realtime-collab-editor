@@ -10,6 +10,8 @@ from schemas import DocumentUpdate, DocumentResponse, DocumentShareCreate
 import json, connection_manager, auth
 from auth_routes import router as auth_router 
 from ai_routes import router as ai_router
+from slowapi.middleware import SlowAPIMiddleware
+from limiter import limiter
 
 manager = connection_manager.ConnectionManager()
 
@@ -17,6 +19,9 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(auth_router)
 app.include_router(ai_router)
+
+app.state.limiter = limiter 
+app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
   CORSMiddleware, 
@@ -146,7 +151,7 @@ def share_doc(doc_id: int, doc_data: DocumentShareCreate, db: Session = Depends(
     db.refresh(document_share)
   except IntegrityError:
     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"The document has already been shared with {doc_data.username}")
-  return {"message": "Document shared sucessfully."}
+  return {"message": "Document shared successfully."}
 
 @app.get("/auth/login")
 def get_login(): return FileResponse("static/login.html")
