@@ -10,6 +10,8 @@ from schemas import DocumentUpdate, DocumentResponse, DocumentShareCreate
 import json, connection_manager, auth
 from auth_routes import router as auth_router 
 from ai_routes import router as ai_router
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from limiter import limiter
 
@@ -19,7 +21,7 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.include_router(auth_router)
 app.include_router(ai_router)
-
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.state.limiter = limiter 
 app.add_middleware(SlowAPIMiddleware)
 
