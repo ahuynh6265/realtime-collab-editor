@@ -14,6 +14,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from limiter import limiter
+from dependencies import document_lookup
 
 manager = connection_manager.ConnectionManager()
 
@@ -97,9 +98,7 @@ async def websocket_endpoint(websocket: WebSocket, document_id: int, username: s
 
 @app.patch("/documents/{document_id}") 
 async def update_doc_name(document_id: int, document_data: DocumentUpdate, db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)):
-  document = db.query(Document).filter(Document.id == document_id).first() 
-  if not document: 
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document ID not found")
+  document = document_lookup(document_id, db, current_user["id"])
   document.title = document_data.title
   db.commit()
   db.refresh(document)
@@ -137,8 +136,10 @@ def get_shared(db: Session = Depends(get_db), current_user: dict = Depends(auth.
   return shared_docs 
 
 
-@app.post("/documents/{doc_id}/share")
-def share_doc(doc_id: int, doc_data: DocumentShareCreate, db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)): 
+@app.post("/documents/{document_id}/share")
+def share_doc(document_id: int, doc_data: DocumentShareCreate, db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)): 
+  document_lookup(document_id, db, current_user["id"])
+
   username = db.query(User).filter(User.username == doc_data.username).first()
   if not username: 
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
@@ -146,7 +147,7 @@ def share_doc(doc_id: int, doc_data: DocumentShareCreate, db: Session = Depends(
   if username.id == current_user["id"]:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You cannot share the document with yourself")
   
-  document_share = DocumentShare(document_id = doc_id, user_id = username.id)
+  document_share = DocumentShare(document_id = document_id, user_id = username.id)
   try:
     db.add(document_share)
     db.commit()
@@ -154,6 +155,13 @@ def share_doc(doc_id: int, doc_data: DocumentShareCreate, db: Session = Depends(
   except IntegrityError:
     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"The document has already been shared with {doc_data.username}")
   return {"message": "Document shared successfully."}
+
+@app.delete("/documents/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_doc(document_id: int, db: Session = Depends(get_db), current_user: dict = Depends(auth.get_current_user)):
+  document = document_lookup(document_id, db, current_user["id"])
+  db.delete(document)
+  db.commit()
+  return
 
 @app.get("/auth/login")
 def get_login(): return FileResponse("static/login.html")

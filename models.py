@@ -13,6 +13,7 @@ class Document(Base):
   updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
   ai_history = relationship("AIHistory", back_populates="document", cascade="all, delete")
+  document_share = relationship("DocumentShare", back_populates="document", cascade="all, delete")
 
 class User(Base):
   __tablename__ = "user" 
@@ -38,3 +39,5 @@ class DocumentShare(Base):
   id = Column(Integer, primary_key=True, autoincrement=True)
   document_id = Column(Integer, ForeignKey("document.id"), nullable=False)
   user_id = Column(Integer, ForeignKey("user.id"), nullable=False)
+
+  document = relationship("Document", back_populates="document_share")

@@ -46,15 +46,29 @@
         const createdAt = new Date(doc.created_at).toLocaleString()
         const updatedAt = new Date(doc.updated_at).toLocaleString() 
         docDiv.innerHTML += 
-        `<div class = "bg-neutral-700 rounded-lg mb-2 transition-colors hover:bg-neutral-600">
-          <a class = "text-white hover:underline rounded block flex items-center gap-3 px-4 py-3 justify-between" href="/editor?id=${doc.id}">📄 ${doc.title}
-            <div class = "flex flex-col"> 
+        `<div class = "bg-neutral-700 rounded-lg mb-2 transition-colors hover:bg-neutral-600 flex items-center gap-3 px-4 py-3 justify-between">
+          <a class = "text-white hover:underline" href="/editor?id=${doc.id}">📄 ${doc.title}</a>
+            <div class = "flex flex-col "> 
               <span class = "text-neutral-400 text-sm">Created: ${createdAt}</span> 
               <span class = "text-neutral-400 text-sm">Last updated: ${updatedAt}</span>
             </div> 
-          </a>
-        </div>`
+            <button class="delete-btn cursor-pointer border-black bg-gradient-to-b from-orange-400 to-orange-800 border rounded-full text-white px-4 py-2 hover:opacity-75 transition-opacity duration-200" data-doc-id="${doc.id}">Delete</button>
+        </div>` 
       }
+      document.querySelectorAll(".delete-btn").forEach(button=> {
+        button.addEventListener("click", function() {
+          const doc = button.dataset.docId
+          if (confirm("Delete this document?")) {
+            fetch(`${httpBase}/documents/${doc}`, {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              }
+            }).then(() => window.location.reload())
+          }
+        })
+      })
     })
 
     const sharedDiv = document.getElementById("shared-list")
@@ -70,13 +84,12 @@
         const createdAt = new Date(doc.created_at).toLocaleString()
         const updatedAt = new Date(doc.updated_at).toLocaleString() 
         sharedDiv.innerHTML += 
-        `<div class = "bg-neutral-700 rounded-lg mb-2 transition-colors hover:bg-neutral-600">
-          <a class = "text-white hover:underline rounded block flex items-center gap-3 px-4 py-3 justify-between" href="/editor?id=${doc.id}">📄 ${doc.title}
+        `<div class = "bg-neutral-700 rounded-lg mb-2 transition-colors hover:bg-neutral-600 flex items-center gap-3 px-4 py-3 justify-between">
+          <a class = "text-white hover:underline" href="/editor?id=${doc.id}">📄 ${doc.title}</a>
             <div class = "flex flex-col"> 
               <span class = "text-neutral-400 text-sm">Created: ${createdAt}</span> 
               <span class = "text-neutral-400 text-sm">Last updated: ${updatedAt}</span>
             </div> 
-          </a>
         </div>`
       }
     })
@@ -97,9 +110,6 @@
       localStorage.removeItem("token")
       window.location.href = `${httpBase}/`
     })
-
-
-
   </script>
   </div> 
 </body>
