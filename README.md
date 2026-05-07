@@ -32,12 +32,14 @@ https://realtime-collab-editor-oj9l.onrender.com/
 - Document title (editable, saves in real time)
 - Document ownership (owner_id on Document model)
 - Document sharing (invite by username, DocumentShare table)
-- Share modal (owner only, username input, sucess/error handling)
+- Share modal (owner only, username input, success/error handling)
 - User owned documents + Shared documents sections on home page
 - Anthropic AI assist - rewrite, expand, summarize, brainstorm 
 - AI History per document 
 - Context menu (right click on selected text)
 - Rate limiting on AI endpoints
+- Server-side ownership enforcement on rename, share, and delete (403 for non-owners)
+- JWT authentication on WebSocket connections (token via query string)
 
 ## Known Limitations 
 - No operational transformation (editor uses last write wins for concurrent edits)
@@ -45,10 +47,6 @@ https://realtime-collab-editor-oj9l.onrender.com/
 - No WebSocket auto-reconnect 
 - Safari browser context menu compatibility issue
 - Plaintext area (no rich text)
-
-## Planned Future Improvements 
-- Operational Transformation 
-- RAG - cross document search 
 
 ## Getting Started
 **1. Clone the repo** 
@@ -94,8 +92,9 @@ uvicorn main:app --reload
 |GET|`/documents`|List owned documents, filtered by owner_id|
 |GET|`/documents/shared`|List documents shared with current user|
 |POST|`/documents`|Create document and set owner_id|
-|PATCH|`/documents/{document_id}`|Update title|
-|POST|`/documents/{doc_id}/share`|Share with user by username (400, 404, 409 errors)|
+|PATCH|`/documents/{document_id}`|Update title (owner only, 403 otherwise)|
+|POST|`/documents/{document_id}/share`|Share with user by username (owner only; 400, 403, 404, 409 errors)|
+|DELETE|`/documents/{document_id}`|Delete document and cascade related shares and AI history (owner only)|
 
 ### Authorization 
 |Method|Endpoint|Description|
@@ -116,7 +115,7 @@ uvicorn main:app --reload
 ### WebSocket
 |Method|Endpoint|Description|
 |---|---|---|
-|WS|`/ws/{document_id}/{username}`|Establish websocket connection|
+|WS|`/ws/{document_id}?token=<jwt>`|Establish WebSocket connection. JWT required via query string; rejects with close code 1008 if missing or invalid. Username derived from the token, not the URL.|
 
 ## Data Models
 

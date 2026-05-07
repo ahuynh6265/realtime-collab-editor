@@ -51,23 +51,36 @@ def get_landing():
 def get_home():
   return FileResponse("static/home.html")
 
-@app.websocket("/ws/{document_id}/{username}")
-async def websocket_endpoint(websocket: WebSocket, document_id: int, username: str, db: Session = Depends(get_db)):
+@app.websocket("/ws/{document_id}")
+async def websocket_endpoint(websocket: WebSocket, document_id: int, db: Session = Depends(get_db), token: str=None):
+  try:
+    user = auth.get_current_user(token=token)
+  except HTTPException:
+    await websocket.close(code=1008)
+    return 
+  
   room = db.query(Document).filter(Document.id == document_id).first() 
   if not room: 
     await websocket.close() 
     return 
-  await manager.connect(websocket, document_id, username)
+  
+  if not room.owner_id == user["id"]: 
+    shared_user = db.query(DocumentShare).filter(DocumentShare.document_id == document_id, DocumentShare.user_id == user["id"]).first()
+    if not shared_user:
+      await websocket.close(code=1008)
+      return
+
+  await manager.connect(websocket, document_id, user["username"])
   data = {"type": "update", "content": room.text, "title": room.title, "owner": room.owner_id}
   await manager.broadcast_user_only(websocket, data)
 
-  data = {"type": "notification", "message": f"{username} has joined"}
+  data = {"type": "notification", "message": f"{user["username"]} has joined"}
   await manager.broadcast(websocket, document_id, data)
 
   data = {"type": "users", "users": list(manager.connected_clients[document_id].values())}
   await manager.broadcast_all(document_id, data)
 
-  print(f"{username} connected to room {document_id} total: {len(manager.connected_clients[document_id])}")
+  print(f"{user["username"]} connected to room {document_id} total: {len(manager.connected_clients[document_id])}")
 
   try:
     while True:
@@ -83,13 +96,13 @@ async def websocket_endpoint(websocket: WebSocket, document_id: int, username: s
 
       elif data["type"] == "typing":
         typing = data["typing"]
-        data = {"type": "typing", "typing": typing, "username": username}
+        data = {"type": "typing", "typing": typing, "username": user["username"]}
         await manager.broadcast(websocket, document_id, data)
 
   except WebSocketDisconnect: 
     pass
   finally:
-    data = {"type": "notification", "message": f"{username} has disconnected"}
+    data = {"type": "notification", "message": f"{user['username']} has disconnected"}
     await manager.broadcast(websocket, document_id, data)
     manager.disconnect(websocket, document_id)
 

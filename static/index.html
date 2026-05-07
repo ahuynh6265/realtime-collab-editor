@@ -198,7 +198,7 @@
       const notifDiv = document.getElementById("notifications")
 
       currentRoom = id
-      websocket = new WebSocket(`${wsBase}/ws/${id}/${username}`)
+      websocket = new WebSocket(`${wsBase}/ws/${id}?token=${token}`)
 
       websocket.onmessage = function(event){
         const edits  = document.getElementById("edit")
